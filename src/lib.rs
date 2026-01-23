@@ -1,7 +1,43 @@
+//! # Envcipher
+//!
+//! Encrypt `.env` files using AES-256-GCM with keys stored in your OS keychain.
+//!
+//! ## Features
+//!
+//! - **AES-256-GCM encryption** with authenticated encryption
+//! - **OS keychain integration** (Keychain / Credential Manager / Secret Service)
+//! - **Python bindings** via PyO3 (optional `python` feature)
+//!
+//! ## CLI Usage
+//!
+//! ```bash
+//! envcipher init    # Generate key
+//! envcipher lock    # Encrypt .env
+//! envcipher unlock  # Decrypt .env
+//! envcipher edit    # Edit encrypted file
+//! envcipher run -- <cmd>  # Run with decrypted env
+//! ```
+//!
+//! ## Python Usage
+//!
+//! ```python
+//! import envcipher
+//! envcipher.load()  # Decrypt and load into os.environ
+//! ```
+
+/// Command-line interface implementation.
 pub mod cli;
+
+/// Cryptographic primitives (AES-256-GCM, key generation).
 pub mod crypto;
+
+/// Environment file parsing and manipulation.
 pub mod env;
+
+/// Error types for the crate.
 pub mod error;
+
+/// OS keychain integration for secure key storage.
 pub mod keystore;
 
 #[cfg(feature = "python")]
