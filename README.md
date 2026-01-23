@@ -9,7 +9,7 @@ Envcipher enciphers your `.env` files using AES-256-GCM and stores keys in your 
 ## Installation
 
 ```bash
-cargo install --path .
+cargo install envcipher
 ```
 
 Or build from source:
