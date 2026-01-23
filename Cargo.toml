@@ -1,6 +1,6 @@
 [package]
 name = "envcipher"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 authors = ["iamprecieee"]
 description = "Encipher .env files to make accidental leaks harmless"
@@ -8,6 +8,23 @@ license = "MIT"
 repository = "https://github.com/iamprecieee/envcipher"
 keywords = ["env", "encryption", "secrets", "security", "cli"]
 categories = ["command-line-utilities", "cryptography"]
+exclude = [
+    "pyproject.toml",
+    ".venv/",
+    "test.py",
+    "__pycache__/",
+    "*.whl",
+    "target/wheels/",
+    ".env",
+]
+
+[lib]
+name = "envcipher"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+python = ["dep:pyo3"]
 
 [dependencies]
 aes-gcm = "0.10.3"
@@ -23,6 +40,8 @@ thiserror = "2.0.18"
 tempfile = "3.24.0"
 shell-words = "1.1.1"
 zeroize = { version = "1.8.2", features = ["derive"] }
+pyo3 = { version = "0.27.2", features = ["extension-module"], optional = true }
+
 
 [dev-dependencies]
 assert_cmd = "2.1.2"

@@ -1,6 +1,3 @@
-// //! OS credential store integration.
-// //! Uses `keyring` (Keychain/Windows Credential Manager/Secret Service).
-
 use keyring::Entry;
 
 use crate::crypto::aead::KEY_LEN;

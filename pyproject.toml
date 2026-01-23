@@ -1,0 +1,24 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "envcipher"
+version = "0.1.1"
+description = "Secure .env file encryption using OS keychain. Keep secrets encrypted at rest."
+authors = [{name = "iamprecieee", email = "emmypresh777@gmail.com"}]
+license = {file = "LICENSE"}
+readme = "README.md"
+requires-python = ">=3.7"
+keywords = ["env", "encryption", "secrets", "security", "python", "dotenv"]
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+
+[project.scripts]
+envcipher = "envcipher:main"
+
+[tool.maturin]
+features = ["python"]

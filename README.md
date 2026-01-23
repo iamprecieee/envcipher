@@ -1,142 +1,169 @@
 # Envcipher
 
-Secure `.env` file encipherment using OS keychain. Keep secrets enciphered at rest while maintaining developer workflow.
+[![Crates.io](https://img.shields.io/crates/v/envcipher.svg)](https://crates.io/crates/envcipher)
+[![PyPI](https://img.shields.io/pypi/v/envcipher.svg)](https://pypi.org/project/envcipher/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## What It Does
+Encrypt `.env` files using AES-256-GCM with keys stored in your OS keychain. Decrypt on demand for local development without managing separate key files.
 
-Envcipher enciphers your `.env` files using AES-256-GCM and stores keys in your operating system's secure credential store. This prevents secrets from being committed in plaintext while keeping local development seamless—no separate key files to manage, no complex setup. Decipher on demand, edit securely, or run apps with injected secrets without ever writing plaintext to disk.
+---
 
 ## Installation
+
+<details open>
+<summary><strong>Python</strong></summary>
+
+```bash
+pip install envcipher
+```
+
+Provides both the CLI and Python library.
+
+</details>
+
+<details>
+<summary><strong>Rust</strong></summary>
 
 ```bash
 cargo install envcipher
 ```
 
-Or build from source:
+CLI only.
+
+</details>
+
+<details>
+<summary><strong>From Source</strong></summary>
+
 ```bash
 git clone https://github.com/iamprecieee/envcipher
 cd envcipher
 cargo build --release
 ```
 
-## Quick Start
+</details>
+
+---
+
+## Usage
+
+### CLI
 
 ```bash
-# 1. Initialize in your project
-envcipher init
-
-# 2. Add secrets safely
-# WARNING: Do NOT append to enciphered file directly!
-envcipher edit
-# (This opens your $EDITOR, deciphered temporarily, and re-enciphers on save)
-
-# 3. Lock before committing
-envcipher lock
-
-# 4. Run without unlocking
-envcipher run -- fastapi run dev
+envcipher init          # Generate key, store in OS keychain
+envcipher edit          # Decrypt -> edit -> re-encrypt
+envcipher lock          # Encrypt .env in place
+envcipher unlock        # Decrypt .env to plaintext
+envcipher run -- <cmd>  # Run command with decrypted env vars
+envcipher status        # Show encryption status
 ```
 
-## Commands Reference
+<details>
+<summary><strong>Python Library</strong></summary>
 
-| Command | Description |
-|---------|-------------|
-| `init` | Generate encipherment key |
-| `lock` | Encipher `.env` file in place |
-| `unlock` | Decipher `.env` to plaintext |
-| `edit` | Securely edit enciphered file (temp file, auto-reencipher) |
-| `run -- <cmd>` | Inject deciphered vars into process without disk writes |
-| `export-key` | Print base64 key for team sharing |
-| `import-key <KEY>` | Import shared key into local keychain |
-| `status` | Show encipherment status and key availability |
+```python
+import envcipher
+import os
 
-## Editor Configuration
+# Load encrypted .env into os.environ
+envcipher.load()
 
-The `edit` command uses your `$EDITOR` environment variable:
-
-```bash
-export EDITOR="code --wait"  # VS Code (--wait is crucial)
-export EDITOR="vim"           # Vim
-export EDITOR="nano"          # Nano
+# Access secrets
+api_key = os.getenv("API_KEY")
 ```
 
-## Team Collaboration
+Custom path:
 
-Keys are stored locally by default. To share with teammates:
+```python
+envcipher.load(path="/path/to/.env")
+```
 
-**Developer A** (exports key):
+Works with both encrypted and plaintext files.
+
+</details>
+
+---
+
+## Team Sharing
+
 ```bash
+# Export key
 envcipher export-key
+# Output: qQWntX6r7eANxsyKHbkJtuXtzW0Hy5zjJGvDSxMKM9I=
+
+# Import on another machine
+envcipher import-key qQWntX6r7eANxsyKHbkJtuXtzW0Hy5zjJGvDSxMKM9I=
 ```
 
-**Developer B** (imports key):
-```bash
-envcipher import-key <BASE64_KEY>
-```
+Share keys through secure channels only.
 
-## Security Model
-
-### What It Protects
-
-- **Secrets at rest**: Files enciphered on disk.  
-- **Accidental commits**: `.env` enciphered even if committed.  
-- **Memory leaks**: Keys zeroized when dropped (no core dump leakage).  
-- **Unauthorized local access**: Requires OS login credentials.
-
-### What It Doesn't Protect
-
-- **Running processes**: Secrets are visible in process environment.  
-- **Root/admin access**: OS keychain accessible to root.  
-- **Key sharing security**: You must use secure channels (key exports are not enciphered).  
-- **Side-channel attacks**: Standard software implementation (no constant-time guarantees).
-
-### Threat Model
-
-Envcipher is designed for:
-- **Protecting secrets from accidental disclosure** (commits, backups)
-- **Local development security** where developers need frequent access but want encipherment at rest
-- **Small teams** sharing keys via out-of-band secure channels
-
-Envcipher is **NOT** designed for:
-- Production secret management (use Vault, AWS Secrets Manager, etc.)
-- Zero-trust environments requiring hardware security modules
-- Protection against sophisticated attackers with root access
-
-## FAQ
-
-**Q: Can I edit adding new underlying secrets manually?**
-A: **No!** Once enciphered, appending text to the file creates a corrupted state (mixed enciphered/plaintext). Always use `envcipher edit` to modify secrets safely, or `unlock` -> edit -> `lock`.
-
-**Q: Can I commit the enciphered `.env` file?**
-A: Yes, but we generally recommend using `.gitignore` and sharing via `export-key`/`import-key` instead. Committing enciphered files is safe only if your team securely shares the key.
-
-**Q: What happens if I lose my key?**  
-A: Keys are stored in your OS keychain. If you lose access to your keychain (e.g., fresh OS install), you'll need a teammate to `export-key` and send it to you.
-
-**Q: How do I rotate keys?**  
-A: Currently manual: decipher with old key, generate new key via `init` in a fresh directory, re-encipher.
-
-**Q: Does this work in CI/CD?**  
-A: The `run` command works, but you'd need to inject the key via `import-key` in your CI setup. For production CI, use native secret management (GitHub Secrets, etc.).
-
-**Q: Can I use this on multiple projects?**  
-A: Yes. Each project directory gets its own key (hashed by directory path). Moving a project folder requires re-importing the key.
+---
 
 ## Security
 
-- **Encipherment**: AES-256-GCM with 96-bit random nonces
-- **Key Generation**: `OsRng` (cryptographically secure)
-- **Key Storage**: OS native keyring (Keychain/Credential Manager/Secret Service)
-- **Memory Safety**: Keys wrapped in `zeroize::ZeroizeOnDrop`
-- **File Format**: `ENVCIPHER:v1:<base64-nonce>:<base64-ciphertext>`
+| Component | Implementation |
+|-----------|----------------|
+| Encryption | AES-256-GCM, 96-bit random nonces |
+| Key Storage | OS keychain (Keychain / Credential Manager / Secret Service) |
+| Memory | Keys zeroized on drop |
+| Format | `ENVCIPHER:v1:<nonce>:<ciphertext>` |
 
-For detailed security analysis, see [SECURITY.md](docs/SECURITY.md).
+**Designed for:** Protecting secrets from accidental commits, local development encryption at rest, small team key sharing.
 
-## Community
+**Not designed for:** Production secret management, zero-trust environments, HSM requirements.
 
-- [Contributing](docs/CONTRIBUTING.md)
-- [Code of Conduct](docs/CODE_OF_CONDUCT.md)
+---
+
+## FAQ
+
+<details>
+<summary>Can I manually edit the encrypted file?</summary>
+
+No. Use `envcipher edit` or the unlock-edit-lock workflow. Manual edits corrupt the format.
+
+</details>
+
+<details>
+<summary>Can I commit the encrypted .env file?</summary>
+
+Yes, but we recommend using `.gitignore` and sharing via `export-key`/`import-key` instead. Committing encrypted files is safe only if your team securely shares the key.
+
+</details>
+
+<details>
+<summary>What if I lose my key?</summary>
+
+Keys are stored in your OS keychain. If you lose access (e.g., fresh OS install), get a teammate to run `export-key`.
+
+</details>
+
+<details>
+<summary>How do I rotate keys?</summary>
+
+Currently manual: decrypt with old key, run `init` in a fresh directory to generate new key, re-encrypt.
+
+</details>
+
+<details>
+<summary>Does it work in CI/CD?</summary>
+
+Not recommended. Envcipher is designed for local development. CI runners have ephemeral keychains, and storing the key as a CI secret defeats the purpose. Use native secret management instead (GitHub Secrets, AWS Secrets Manager, etc.).
+
+</details>
+
+<details>
+<summary>Can I use this on multiple projects?</summary>
+
+Yes. Each project directory gets its own key (hashed by directory path). Moving a project folder requires re-importing the key.
+
+</details>
+
+---
 
 ## License
 
 [MIT](LICENSE)
+
+---
+
+[Contributing](docs/CONTRIBUTING.md) | [Code of Conduct](docs/CODE_OF_CONDUCT.md) | [Security](docs/SECURITY.md)
