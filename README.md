@@ -38,7 +38,7 @@ CLI only.
 ```bash
 git clone https://github.com/iamprecieee/envcipher
 cd envcipher
-cargo build --release
+cargo install --path .
 ```
 
 </details>
