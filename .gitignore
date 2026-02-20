@@ -6,3 +6,4 @@ PR*
 .envcipher.json
 test.py
 .venv
+uv.lock
